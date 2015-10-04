@@ -53,7 +53,7 @@ class PlayerAI:
 # finds the best possible move
 def find_move(self, gameboard, player, opponent):
 	# defensive maneuvre decision tree
-	defence = defensive_action(self, gameboard, player.x, player.y, 0)
+	defence = defensive_action(self, gameboard, player.x, player.y, 0, player, opponent)
 	if (defence != "Safe"):
 		return decide_direction(self.direction_convert, defence, player.direction)
 
@@ -65,85 +65,136 @@ def find_move(self, gameboard, player, opponent):
 
 # This shit is recursive backtracking, handle it like it's a fucking time bomb dude
 # Recursively searches through all possible defensive maneuvres and returns the first possible one
-# which will ensure survival for the next 2 turns
-def defensive_action(self, gameboard, x, y, turn):
+# which will ensure survival for the next 3 turns (hopefully)
+def defensive_action(self, gameboard, x, y, turn, player, opponent):
 	# stop at depth 3, can increase if time permits
 	if (turn == 3):
 		return True
 
-	if (is_hit(self, gameboard, x, y, turn)):
-		print('is hit')
+	if (is_hit(self, gameboard, x, y, turn + 1) and turn != 0):
+		print('will be hit')
 		return False
+
+	turn = turn + 1
 
 	# get possible directions that are not blocked by walls
 	directions = possible_moves(self, gameboard, x, y)
 
-	bullets = gameboard.bullets
-	for bullet in bullets:
-		if (bullet.y == y and get_x(gameboard.width, bullet.x + 1) - x > -3):
-			if (bullet.direction == Direction.RIGHT):
-				print("bullet coming from the left!")
-				up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn + 1)
-				if (up and Direction.UP in directions):
-					return Direction.UP
-				down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn + 1)
-				if (down and Direction.DOWN in directions):
-					return Direction.DOWN
-				else:
-					return False
-		if (bullet.y == y and get_x(gameboard.width, bullet.x - 1) - x < 3):
-			if (bullet.direction == Direction.LEFT):
-				print("bullet coming from the right!")
-				up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn + 1)
-				if (up and Direction.UP in directions):
-					return Direction.UP
-				down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn + 1)
-				if (down and Direction.DOWN in directions):
-					return Direction.DOWN
-				else:
-					return False
-		if (bullet.x == x and get_y(gameboard.height, bullet.y - 1) - y < 3):
-			if (bullet.direction == Direction.UP):
-				print("bullet coming from below!")
-				left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn + 1)
-				if (left and Direction.LEFT in directions):
-					return Direction.LEFT
-				right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn + 1)
-				if (right and Direction.RIGHT in directions):
-					return Direction.RIGHT
-				else:
-					return False
-		if (bullet.x == x and get_y(gameboard.height, bullet.y + 1) - y > -3):
-			if (bullet.direction == Direction.DOWN):
-				print("bullet coming from above!")
-				left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn + 1)
-				if (left and Direction.LEFT in directions):
-					return Direction.LEFT
-				right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn + 1)
-				if (right and Direction.RIGHT in directions):
-					return Direction.RIGHT
-				else:
-					return False
-
+	# dodge turrets
 	lethal_turrets = find_lethal_turrets(self, x, y)
 	for turret in lethal_turrets:
+		print(turret)
 		if (turret_will_fire(turret, turn + self.timer)):
 			if (turret.y == y):
-				up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn + 1)
+				if (player.direction == Direction.UP):
+					up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
+					if (up and Direction.UP in directions):
+						return Direction.UP
+					down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
+					if (down and Direction.DOWN in directions):
+						return Direction.DOWN
+				elif (player.direction == Direction.DOWN):
+					down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
+					if (down and Direction.DOWN in directions):
+						return Direction.DOWN
+					up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
+					if (up and Direction.UP in directions):
+						return Direction.UP
+				else:
+					up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
+					if (up and Direction.UP in directions):
+						return Direction.UP
+					down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
+					if (down and Direction.DOWN in directions):
+						return Direction.DOWN
+				return False
+			if (turret.x == x):
+				if (player.direction == Direction.LEFT):
+					left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
+					if (left and Direction.LEFT in directions):
+						return Direction.LEFT
+					right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
+					if (right and Direction.RIGHT in directions):
+						return Direction.RIGHT
+				elif (player.direction == Direction.RIGHT):
+					right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
+					if (right and Direction.RIGHT in directions):
+						return Direction.RIGHT
+					left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
+					if (left and Direction.LEFT in directions):
+						return Direction.LEFT
+				else:
+					left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
+					if (left and Direction.LEFT in directions):
+						return Direction.LEFT
+					right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
+					if (right and Direction.RIGHT in directions):
+						return Direction.RIGHT
+				return False
+
+	# dodge bullets
+	bullets = gameboard.bullets
+	for bullet in bullets:
+		if (bullet.y == y and get_x(gameboard.width, bullet.x + turn) - x > -3 and get_x(gameboard.width, bullet.x + turn) - x < 0):
+			if (bullet.direction == Direction.RIGHT):
+				print("bullet coming from the left!")
+				up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
 				if (up and Direction.UP in directions):
 					return Direction.UP
-				down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn + 1)
+				down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
 				if (down and Direction.DOWN in directions):
 					return Direction.DOWN
-			if (turret.x == x):
-				left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn + 1)
+				return False
+		if (bullet.y == y and get_x(gameboard.width, bullet.x - turn) - x < 3 and get_x(gameboard.width, bullet.x - turn) - x > 0):
+			if (bullet.direction == Direction.LEFT):
+				print("bullet coming from the right!")
+				up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
+				if (up and Direction.UP in directions):
+					return Direction.UP
+				down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
+				if (down and Direction.DOWN in directions):
+					return Direction.DOWN
+				return False
+		if (bullet.x == x and get_y(gameboard.height, bullet.y - turn) - y < 3 and get_y(gameboard.height, bullet.y - turn) - y > 0):
+			if (bullet.direction == Direction.UP):
+				print("bullet coming from below!")
+				left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
 				if (left and Direction.LEFT in directions):
 					return Direction.LEFT
-				right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn + 1)
+				right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
 				if (right and Direction.RIGHT in directions):
 					return Direction.RIGHT
+				return False
+		if (bullet.x == x and get_y(gameboard.height, bullet.y + turn) - y > -3 and get_y(gameboard.height, bullet.y + turn) - y < 0):
+			if (bullet.direction == Direction.DOWN):
+				print("bullet coming from above!")
+				left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
+				if (left and Direction.LEFT in directions):
+					return Direction.LEFT
+				right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
+				if (right and Direction.RIGHT in directions):
+					return Direction.RIGHT
+				return False
 
-	if (turn == 0):
+	# keep distance from opponent
+	if (opponent.y == player.y and abs(opponent.x - player.x) < 3):
+		up = defensive_action(self, gameboard, x, get_y(gameboard.height, y + 1), turn, player, opponent)
+		if (up and Direction.UP in directions):
+			return Direction.UP
+		down = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
+		if (down and Direction.DOWN in directions):
+			return Direction.DOWN
+		return False
+	elif (opponent.x == player.x and abs(opponent.y - player.y) < 3):
+		left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
+		if (left and Direction.LEFT in directions):
+			return Direction.LEFT
+		right = defensive_action(self, gameboard, get_x(gameboard.width, x + 1), y, turn, player, opponent)
+		if (right and Direction.RIGHT in directions):
+			return Direction.RIGHT
+		return False
+
+	if (turn == 1):
 		return "Safe"
 	else:
 		return True
@@ -220,12 +271,12 @@ def get_y(height, next_move):
 # returns array with all possible moves
 def possible_moves(self, gameboard, x, y):
 	moves = []
-	if (not gameboard.is_wall_at_tile(get_x(gameboard.width, x + 1), y)):
+	if (not gameboard.is_wall_at_tile(get_x(gameboard.width, x + 1), y) and not gameboard.turret_at_tile[get_x(gameboard.width, x + 1)][y]):
 		moves.append(Direction.RIGHT)
-	if (not gameboard.is_wall_at_tile(get_x(gameboard.width, x - 1), y)):
+	if (not gameboard.is_wall_at_tile(get_x(gameboard.width, x - 1), y) and not gameboard.turret_at_tile[get_x(gameboard.width, x - 1)][y]):
 		moves.append(Direction.LEFT)
-	if (not gameboard.is_wall_at_tile(x, get_y(gameboard.height, y - 1))):
+	if (not gameboard.is_wall_at_tile(x, get_y(gameboard.height, y - 1)) and not gameboard.turret_at_tile[x][get_y(gameboard.height, y - 1)]):
 		moves.append(Direction.UP)
-	if (not gameboard.is_wall_at_tile(x, get_y(gameboard.height, y + 1))):
+	if (not gameboard.is_wall_at_tile(x, get_y(gameboard.height, y + 1)) and not gameboard.turret_at_tile[x][get_y(gameboard.height, y + 1)]):
 		moves.append(Direction.DOWN)
 	return moves
