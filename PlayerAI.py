@@ -78,6 +78,8 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 	# dodge turrets
 	lethal_turrets = find_lethal_turrets(self, x, y)
 	for turret in lethal_turrets:
+		if (turret_will_fire(turret, turn - 2 + self.timer)):
+			return False
 		if (turret_will_fire(turret, turn - 1 + self.timer)):
 			if (turret.y == y):
 				if (player.direction == Direction.UP):
@@ -269,7 +271,7 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 					return False
 
 	# keep distance from opponent
-	if (opponent.y == player.y and (abs(opponent.x - player.x) < 3 or (gameboard.width - abs(opponent.x - player.x)) < 3)):
+	if (opponent.y == player.y and (abs(opponent.x - player.x) < 4 or (gameboard.width - abs(opponent.x - player.x)) < 4)):
 		up = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
 		if (up and Direction.UP in directions):
 			return Direction.UP
@@ -277,7 +279,7 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 		if (down and Direction.DOWN in directions):
 			return Direction.DOWN
 		return False
-	elif (opponent.x == player.x and (abs(opponent.y - player.y) < 3 or (gameboard.height - abs(opponent.y - player.y)) < 3)):
+	elif (opponent.x == player.x and (abs(opponent.y - player.y) < 4 or (gameboard.height - abs(opponent.y - player.y)) < 4)):
 		left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
 		if (left and Direction.LEFT in directions):
 			return Direction.LEFT
@@ -286,8 +288,10 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 			return Direction.RIGHT
 		return False
 
+	# if no move is required
 	if (turn == 1):
 		return "Safe"
+	# went through a deep iterative check and there is no danger
 	else:
 		return True
 
