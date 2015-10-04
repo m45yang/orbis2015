@@ -330,6 +330,23 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 				return Direction.RIGHT
 			return False
 
+	# TO DO: implement this section so PeaceBot actually moves on its own
+	# if (self.count == 4):
+	# 	self.count = 0
+	# 	# if no defensive maneuvres required, go fuck shit up
+	# 	right = not is_hit(self, gameboard, get_x(gameboard.width, x + 1), y, turn - 1)
+	# 	if (right and Direction.RIGHT in directions):
+	# 		return Direction.RIGHT
+	# 	down = not is_hit(self, gameboard, x, get_y(gameboard.height, y + 1), turn - 1)
+	# 	if (down and Direction.DOWN in directions):
+	# 		return Direction.DOWN
+	# 	left = not is_hit(self, gameboard, get_x(gameboard.width, x - 1), y, turn - 1)
+	# 	if  (left and Direction.LEFT in directions):
+	# 		return Direction.LEFT
+	# 	up = not is_hit(self, gameboard, x, get_y(gameboard.height, y - 1), turn - 1)
+	# 	if (up and Direction.UP in directions):
+	# 		return Direction.UP
+
 	# if no move is required
 	if (turn == 1):
 		return "Safe"
