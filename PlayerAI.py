@@ -42,7 +42,6 @@ class PlayerAI:
 			self.turrets = gameboard.turrets
 			for turret in self.turrets:
 				turret.killzone = turret_kill_zone(turret.x, turret.y, gameboard.width, gameboard.height)
-				print(turret.killzone)
 				turret.schedule = [turret.fire_time, turret.cooldown_time, turret.fire_time + turret.cooldown_time]
 
 		return self.action_convert[find_move(self, gameboard, player, opponent)]
@@ -57,22 +56,27 @@ def find_move(self, gameboard, player, opponent):
 	if (defence != "Safe"):
 		return decide_direction(self.direction_convert, defence, player.direction)
 
-	return "NO_MOVE"
+	# generate offensive move if safe
+	offence = offensive_action(self, gameboard, player, opponent)
+	return decide_direction(self.direction_convert, offence, player.direction)
 
-	# else:
-	# 	return "FACE_RIGHT"
-
+def offensive_action(self, gameboard, player, opponent):
+	print("offence")
+	if (is_hit(self, gameboard, get_x(gameboard.width, player.x + 1), player.y, self.timer + 1)):
+		return False
+	else:
+		return Direction.RIGHT
 
 # This shit is recursive backtracking, handle it like it's a fucking time bomb dude
 # Recursively searches through all possible defensive maneuvres and returns the first possible one
 # which will ensure survival for the next 3 turns (hopefully)
 def defensive_action(self, gameboard, x, y, turn, player, opponent):
+	print("defence")
 	# stop at depth 3, can increase if time permits
 	if (turn == 3):
 		return True
 
 	if (is_hit(self, gameboard, x, y, turn + 1) and turn != 0):
-		print('will be hit')
 		return False
 
 	turn = turn + 1
@@ -204,7 +208,15 @@ def is_hit(self, gameboard, x, y, turn):
 	turrets = find_lethal_turrets(self, x, y)
 	for turret in turrets:
 		if (turret_will_fire(turret, self.timer + turn)):
+			print("turret: ")
+			print(True)
 			return True
+	for bullet in gameboard.bullets:
+		if (bullet.x == x and bullet.y == y):
+			(print("bullet: "))
+			print(True)
+			return True
+	print("won't be hit")
 	return False
 
 # returns True if turret is designated to fire at the given turn
@@ -212,12 +224,8 @@ def turret_will_fire(turret, turn):
 	cycle = turret.schedule[2]
 	fire = turret.schedule[0]
 	if (turn % cycle < fire):
-		print("will fire: ")
-		print(True)
 		return True
 	else:
-		print("will fire: ")
-		print(False)
 		return False
 
 # returns an array of turrets in range of player at turn
