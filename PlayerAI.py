@@ -269,7 +269,7 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 					return False
 
 	# keep distance from opponent
-	if (opponent.y == player.y and abs(opponent.x - player.x) < 4):
+	if (opponent.y == player.y and (abs(opponent.x - player.x) < 3 or (gameboard.width - abs(opponent.x - player.x)) < 3)):
 		up = defensive_action(self, gameboard, x, get_y(gameboard.height, y - 1), turn, player, opponent)
 		if (up and Direction.UP in directions):
 			return Direction.UP
@@ -277,7 +277,7 @@ def defensive_action(self, gameboard, x, y, turn, player, opponent):
 		if (down and Direction.DOWN in directions):
 			return Direction.DOWN
 		return False
-	elif (opponent.x == player.x and abs(opponent.y - player.y) < 4):
+	elif (opponent.x == player.x and (abs(opponent.y - player.y) < 3 or (gameboard.height - abs(opponent.y - player.y)) < 3)):
 		left = defensive_action(self, gameboard, get_x(gameboard.width, x - 1), y, turn, player, opponent)
 		if (left and Direction.LEFT in directions):
 			return Direction.LEFT
